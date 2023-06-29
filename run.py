@@ -73,9 +73,12 @@ def buildIQ(eFile, duration, csv_file, location, binfilename):
 #     return binfilename    
     
 
+
 def RunRealtime(eFile, location, binfilename):
 
     print('it`s realtime mode')
+
+    subprocess.call('nc -l 127.0.0.1 22500 | ./rt_gpssim  -b 8 -e ' + eFile + ' -l  ' + location, shell=True)	
 
     sock = socket.socket()
     port = 22500
@@ -93,6 +96,10 @@ def RunRealtime(eFile, location, binfilename):
                 print(data)
                 string = str(data, encoding='utf-8')
                 print(string)
+
+                #здесь добавляется проверка
+                location = string
+
 
     except KeyboardInterrupt:
         print('Listening stop...')

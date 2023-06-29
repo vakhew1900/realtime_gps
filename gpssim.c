@@ -1673,7 +1673,7 @@ void usage(void)
 }
 
 double llh[3];
-double xyz[USER_MOTION_SIZE][3];
+double tmp_xyz[3];
 	
 pthread_mutex_t coordinateMutex;
 
@@ -1688,7 +1688,9 @@ void *readStdin(void *tid)
 		pthread_mutex_lock(&coordinateMutex);
 		llh[0] = llh[0] / R2D; // convert to RAD
 		llh[1] = llh[1] / R2D; // convert to RAD
-		llh2xyz(llh, xyz[1]);
+	//	printf("old xyz : %lf %lf %lf ", xyz[1][1], xyz[1][1], xyz[1][2]);
+		llh2xyz(llh, tmp_xyz);
+	//		printf("new xyz : %lf %lf %lf ", xyz[1][1], xyz[1][1], xyz[1][2]);
 		pthread_mutex_unlock(&coordinateMutex);
 	}
 }
@@ -2172,9 +2174,9 @@ int main(int argc, char *argv[])
 	// Update receiver time
 	grx = incGpsTime(grx, 0.1);
 	// initial coordinates
-	xyz[1][0] = xyz[0][0];
-	xyz[1][1] = xyz[0][1];
-	xyz[1][2] = xyz[0][2];
+	tmp_xyz[0] = xyz[0][0];
+	tmp_xyz[1] = xyz[0][1];
+	tmp_xyz[2] = xyz[0][2];
 	
 	// create mutex and start stdin read thread
 	pthread_mutex_init(&coordinateMutex, NULL);	
@@ -2185,10 +2187,12 @@ int main(int argc, char *argv[])
 	while (1)
 	{
 		pthread_mutex_lock(&coordinateMutex);
-		xyz[0][0] = xyz[1][0];
-		xyz[0][1] = xyz[1][1];
-		xyz[0][2] = xyz[1][2];
+		xyz[0][0] = tmp_xyz[0];
+		xyz[0][1] = tmp_xyz[1];
+		xyz[0][2] = tmp_xyz[2];
 		pthread_mutex_unlock(&coordinateMutex);
+	//	int cnt = 0;
+		//printf("new main xyz: %lf %lf %lf %d ", xyz[0][0], xyz[0][1], xyz[0][2], cnt++);
 
 		for (i=0; i<MAX_CHAN; i++)
 		{
