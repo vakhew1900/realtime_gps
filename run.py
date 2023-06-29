@@ -7,7 +7,7 @@ import argparse
 import zlib
 import subprocess
 import py_compile
-
+import socket
 
 def is_windows():
 	if os.name == 'nt':
@@ -62,16 +62,44 @@ def buildIQ(eFile, duration, csv_file, location, binfilename):
             subprocess.call('./gps-sdr-sim -v -T now -e ' + eFile + ' -u ' + csv_file + ' -b 8 -d '+ duration + ' -s 4000000' + ' -o ' + binfilename, shell=True)
     return binfilename
 
-def RunRealtime(eFile, location, binfilename):
-    if is_windows():
-        print(('gps-sdr-sim -b 8 -e ' + eFile + '-l ' + location))
-        subprocess.call('.gps-sdr-sim -b 8 -e ' + eFile + ' -l ' + location, shell=True)
-    else:
-        #subprocess.call('nc -l 0.0.0.0 22500 | ./rt_gpssim  -b 8 -e ' + eFile + ' -l  ' + location, shell=True)	
-        subprocess.call('nc -l 127.0.0.1 22500 | ./rt_gpssim  -b 8 -e ' + eFile + ' -l  ' + location, shell=True)	
-       # subprocess.call('nc -l 127.0.0.1 22500 | echo', shell=True)		
-    return binfilename    
+# def RunRealtime(eFile, location, binfilename):
+#     if is_windows():
+#         print(('gps-sdr-sim -b 8 -e ' + eFile + '-l ' + location))
+#         subprocess.call('.gps-sdr-sim -b 8 -e ' + eFile + ' -l ' + location, shell=True)
+#     else:
+#         #subprocess.call('nc -l 0.0.0.0 22500 | ./rt_gpssim  -b 8 -e ' + eFile + ' -l  ' + location, shell=True)	
+#         subprocess.call('nc -l 127.0.0.1 22500 | ./rt_gpssim  -b 8 -e ' + eFile + ' -l  ' + location, shell=True)	
+#        # subprocess.call('nc -l 127.0.0.1 22500 | echo', shell=True)		
+#     return binfilename    
     
+
+def RunRealtime(eFile, location, binfilename):
+
+    print('it`s realtime mode')
+
+    sock = socket.socket()
+    port = 22500
+    sock.bind(('', port))
+    sock.listen(1)
+   # print('it`s realtime mode')
+    conn, addr = sock.accept()
+
+    try :
+        print("Connected addr :{}".format(addr))
+        while True:
+            data = conn.recv(1024)
+            
+            if data :
+                print(data)
+                string = str(data, encoding='utf-8')
+                print(string)
+
+    except KeyboardInterrupt:
+        print('Listening stop...')
+        conn.close()
+
+    return binfilename    
+
 def start_broadcast(binFile, additional_param):
     global HACKRF_DIR 
     #print 'HACKRF_DIR = ' + HACKRF_DIR
@@ -135,6 +163,7 @@ def main():
     #start_broadcast(results.input_sim_filename, '')
     # -o -u -f
     
+    print(results.realtime)
     if results.input_sim_filename is None:
         ephemerisFile = get_ephemeris(FILES_DIR)
         print('ephemerisFile = ' + ephemerisFile)
