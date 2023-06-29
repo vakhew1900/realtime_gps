@@ -8,7 +8,7 @@ var app = http.createServer(function(req, res) {
 });
 
 // print coordinates on setPosition callback
-var socket = require('socket.io').listen(app);
+var socket = require('socket.io')(app);
 socket.on('connection', function(socket) {
   socket.on('setPosition', function(pos) {
     console.log(pos.lat + "," + pos.lng + ",157.1");
