@@ -8,6 +8,10 @@ import zlib
 import subprocess
 import py_compile
 import socket
+from gpsdclient import GPSDClient
+from datetime import datetime
+from get_gps_from_tcp import getCoordinate
+
 
 def is_windows():
 	if os.name == 'nt':
@@ -74,12 +78,12 @@ def buildIQ(eFile, duration, csv_file, location, binfilename):
     
 
 
-def RunRealtime(eFile, location, binfilename):
+def RunRealtimeWithMap(eFile, location, binfilename):
 
-    print('it`s realtime mode')
-
-    subprocess.call('nc -l 127.0.0.1 22500 | ./rt_gpssim  -b 8 -e ' + eFile + ' -l  ' + location, shell=True)	
-
+   
+   
+    RunRealTime(eFile, location, binfilename)
+    
     sock = socket.socket()
     port = 22500
     sock.bind(('', port))
@@ -106,6 +110,42 @@ def RunRealtime(eFile, location, binfilename):
         conn.close()
 
     return binfilename    
+
+
+def RunRealTimeWithGPSD(eFile, binfilename):
+
+    print("Starting spoofing....")
+    location = getCoordinate()
+    print("Actual coordinates: {}".format(location))
+    
+    RunRealTime(eFile, location, binfilename)
+    return binfilename
+
+    # actual_time = datetime.now()
+
+    # while(True):
+    #     print("circle") 
+    #     new_location = getCoordinate()
+    #     new_time = datetime.now()
+    #     delta = new_time - actual_time
+    #     print("delta: " + str(delta.total_seconds()))
+    #     if (delta.total_seconds() > 2):
+    #         location = new_location
+    #         actual_time = new_time
+
+
+
+
+
+
+            
+
+def RunRealTime(eFile, location, binfilename):
+    print('it`s realtime mode')
+    subprocess.call('nc -l 127.0.0.1 22500 | ./rt_gpssim  -b 8 -e ' + eFile + ' -l  ' + location, shell=True)
+    return binfilename	
+
+
 
 def start_broadcast(binFile, additional_param):
     global HACKRF_DIR 
@@ -177,8 +217,9 @@ def main():
         if results.realtime is False:
             results.input_sim_filename = buildIQ(ephemerisFile, results.duration, results.csv_file, results.location, results.sim_filename)
     if results.realtime is True:
-        RunRealtime (ephemerisFile, results.location, results.sim_filename)
-        
+        #  RunRealTime (ephemerisFile, results.location, results.sim_filename)
+        RunRealTimeWithGPSD(ephemerisFile, results.sim_filename)
+
     else:
         if results.do_not_transmit is not True:
             R = '-R' if results.repeat is True else ''
