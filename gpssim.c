@@ -1677,6 +1677,71 @@ double tmp_xyz[3];
 	
 pthread_mutex_t coordinateMutex;
 
+
+
+clock_t tstart,tend;
+
+FILE *fp;
+
+int sv;
+int neph,ieph;
+ephem_t eph[EPHEM_ARRAY_SIZE][MAX_SAT];
+gpstime_t g0;
+
+double llh[3];
+
+int i;
+channel_t chan[MAX_CHAN];
+double elvmask = 0.0; // in degree
+
+int ip,qp;
+int iTable;
+short *iq_buff = NULL;
+signed char *iq8_buff = NULL;
+
+gpstime_t grx;
+double delt;
+int isamp;
+
+int iumd;
+int numd;
+char umfile[MAX_CHAR];
+double xyz[USER_MOTION_SIZE][3];
+
+int staticLocationMode = FALSE;
+int nmeaGGA = FALSE;
+
+char navfile[MAX_CHAR];
+char outfile[MAX_CHAR];
+
+double samp_freq;
+int iq_buff_size;
+int data_format;
+
+int result;
+
+int gain[MAX_CHAN];
+double path_loss;
+double ant_gain;
+double ant_pat[37];
+int ibs; // boresight angle index
+
+datetime_t t0,tmin,tmax;
+gpstime_t gmin,gmax;
+double dt;
+int igrx;
+
+double duration;
+int iduration;
+int verb;
+
+int timeoverwrite = FALSE; // Overwirte the TOC and TOE in the RINEX file
+int tids;
+pthread_t thread;
+pthread_attr_t attr;
+ionoutc_t ionoutc;
+
+
 void *readStdin(void *tid) 
 {
 	printf("readStdin thread started\n");
@@ -1697,67 +1762,7 @@ void *readStdin(void *tid)
 
 int main(int argc, char *argv[])
 {
-	clock_t tstart,tend;
-
-	FILE *fp;
-
-	int sv;
-	int neph,ieph;
-	ephem_t eph[EPHEM_ARRAY_SIZE][MAX_SAT];
-	gpstime_t g0;
 	
-	double llh[3];
-	
-	int i;
-	channel_t chan[MAX_CHAN];
-	double elvmask = 0.0; // in degree
-
-	int ip,qp;
-	int iTable;
-	short *iq_buff = NULL;
-	signed char *iq8_buff = NULL;
-
-	gpstime_t grx;
-	double delt;
-	int isamp;
-
-	int iumd;
-	int numd;
-	char umfile[MAX_CHAR];
-	double xyz[USER_MOTION_SIZE][3];
-
-	int staticLocationMode = FALSE;
-	int nmeaGGA = FALSE;
-
-	char navfile[MAX_CHAR];
-	char outfile[MAX_CHAR];
-
-	double samp_freq;
-	int iq_buff_size;
-	int data_format;
-
-	int result;
-
-	int gain[MAX_CHAN];
-	double path_loss;
-	double ant_gain;
-	double ant_pat[37];
-	int ibs; // boresight angle index
-
-	datetime_t t0,tmin,tmax;
-	gpstime_t gmin,gmax;
-	double dt;
-	int igrx;
-
-	double duration;
-	int iduration;
-	int verb;
-
-	int timeoverwrite = FALSE; // Overwirte the TOC and TOE in the RINEX file
-	int tids;
-	pthread_t thread;
-	pthread_attr_t attr;
-	ionoutc_t ionoutc;
 
 	////////////////////////////////////////////////////////////
 	// Read options

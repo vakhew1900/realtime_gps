@@ -11,6 +11,7 @@ import socket
 from gpsdclient import GPSDClient
 from datetime import datetime
 from get_gps_from_tcp import getCoordinate
+import requests
 
 
 def is_windows():
@@ -33,10 +34,12 @@ def get_ephemeris(ephemeris_directory):
         if not os.path.isfile(eFile + '.Z'):
             print('get the ephemeris file ' + filename + '\n\r')
             #source = 'http://ftp.pecny.cz/ftp/LDC/orbits/brdc/' + str(year) + '/' + filename +'.Z'
-            source = 'ftp://cddis.gsfc.nasa.gov/gnss/data/daily/' + str(year) + '/' + str(yday).zfill(3) + '/' + str(yearExtension) + 'n/' + filename +'.Z'
+            source = 'https://cddis.gsfc.nasa.gov/gnss/data/daily/' + str(year) + '/' + str(yday).zfill(3) + '/' + str(yearExtension) + 'n/' + filename +'.Z'
             print('File location=' + eFile)
             dFile = wget.download(source, ephemeris_directory)
-            print('\n\r' + dFile+ ' Downloaded\n\r')
+            # dFile = requests.get(source, auth=('antchupinin@mail.ru', 'y7d4ndkTsP3RL7n'))
+            # print(dFile.content)
+            print('\n\r' + dFile + ' Downloaded\n\r')
         else:
             dFile = eFile + '.Z'
         print('Uncompress...\n\r')
@@ -112,37 +115,16 @@ def RunRealtimeWithMap(eFile, location, binfilename):
     return binfilename    
 
 
-def RunRealTimeWithGPSD(eFile, binfilename):
-
-    print("Starting spoofing....")
-    location = getCoordinate()
-    print("Actual coordinates: {}".format(location))
-    
-    RunRealTime(eFile, location, binfilename)
-    return binfilename
-
-    # actual_time = datetime.now()
-
-    # while(True):
-    #     print("circle") 
-    #     new_location = getCoordinate()
-    #     new_time = datetime.now()
-    #     delta = new_time - actual_time
-    #     print("delta: " + str(delta.total_seconds()))
-    #     if (delta.total_seconds() > 2):
-    #         location = new_location
-    #         actual_time = new_time
-
-
-
-
-
 
             
 
 def RunRealTime(eFile, location, binfilename):
     print('it`s realtime mode')
-    subprocess.call('nc -l 127.0.0.1 22500 | ./rt_gpssim  -b 8 -e ' + eFile + ' -l  ' + location, shell=True)
+    now = datetime.utcnow()
+    now_str = now.strftime("%Y/%m/%d,%H:%M:%S")
+    cmd = 'nc -l 127.0.0.1 22500 | ./rt_gpssim  -b 8 -e ' + eFile + ' -T ' + now_str  + ' -l  ' + location
+    print(cmd)
+    subprocess.call(cmd, shell=True)
     return binfilename	
 
 
@@ -217,8 +199,8 @@ def main():
         if results.realtime is False:
             results.input_sim_filename = buildIQ(ephemerisFile, results.duration, results.csv_file, results.location, results.sim_filename)
     if results.realtime is True:
-        #  RunRealTime (ephemerisFile, results.location, results.sim_filename)
-        RunRealTimeWithGPSD(ephemerisFile, results.sim_filename)
+          RunRealTime (ephemerisFile, results.location, results.sim_filename)
+        # RunRealTimeWithGPSD(ephemerisFile, results.sim_filename)
 
     else:
         if results.do_not_transmit is not True:
