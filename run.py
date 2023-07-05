@@ -12,7 +12,81 @@ from gpsdclient import GPSDClient
 from datetime import datetime
 from get_gps_from_tcp import getCoordinate
 import requests
+import gzip
+import shutil
 
+
+
+# overriding requests.Session.rebuild_auth to mantain headers when redirected
+
+class SessionWithHeaderRedirection(requests.Session):
+
+    AUTH_HOST = 'urs.earthdata.nasa.gov'
+
+    def __init__(self, username, password):
+        super().__init__()
+        self.auth = (username, password)
+
+
+   # Overrides from the library to keep headers when redirected to or from
+   # the NASA auth host.
+    def rebuild_auth(self, prepared_request, response):
+
+        headers = prepared_request.headers
+        url = prepared_request.url
+
+        if 'Authorization' in headers:
+
+            original_parsed = requests.utils.urlparse(response.request.url)
+            redirect_parsed = requests.utils.urlparse(url)
+
+            if (original_parsed.hostname != redirect_parsed.hostname) and redirect_parsed.hostname != self.AUTH_HOST and  original_parsed.hostname != self.AUTH_HOST:
+             del headers['Authorization']
+
+        return
+
+
+
+
+def downloadFile(ephemeris_directory, filename, year):
+    # create session with the user credentials that will be used to authenticate access to the data
+    username = "antchupinin@mail.ru"
+    password= "y7d4ndkTsP3RL7n"
+    session = SessionWithHeaderRedirection(username, password)
+
+    # the url of the file we wish to retrieve
+    url = "https://cddis.nasa.gov/archive/gnss/data/daily/{0}/brdc/{1}.gz".format(year, filename)
+
+
+    # extract the filename from the url to be used when saving the file
+    gz_archive = ephemeris_directory + '\\' + filename
+
+    try:
+
+        # submit the request using the session
+        response = session.get(url, stream=True)
+        print(response.status_code)
+
+        # raise an exception in case of http errors
+        response.raise_for_status()  
+
+        # save the file
+        with open(gz_archive, 'wb') as fd:
+            for chunk in response.iter_content(chunk_size=1024*1024):
+                fd.write(chunk)
+
+        return gz_archive
+
+    except requests.exceptions.HTTPError as e:
+
+        # handle any errors here
+        print(e)
+
+
+def extractEphFile(ephemeris_directory, gz_archive, eFile):
+    with gzip.open(gz_archive, 'rb') as f_in:
+        with open(eFile, 'wb') as f_out:
+         shutil.copyfileobj(f_in, f_out)
 
 def is_windows():
 	if os.name == 'nt':
@@ -32,13 +106,8 @@ def get_ephemeris(ephemeris_directory):
 
     if not os.path.isfile(eFile):
         if not os.path.isfile(eFile + '.Z'):
-            print('get the ephemeris file ' + filename + '\n\r')
-            #source = 'http://ftp.pecny.cz/ftp/LDC/orbits/brdc/' + str(year) + '/' + filename +'.Z'
-            source = 'https://cddis.gsfc.nasa.gov/gnss/data/daily/' + str(year) + '/' + str(yday).zfill(3) + '/' + str(yearExtension) + 'n/' + filename +'.Z'
-            print('File location=' + eFile)
-            dFile = wget.download(source, ephemeris_directory)
-            # dFile = requests.get(source, auth=('antchupinin@mail.ru', 'y7d4ndkTsP3RL7n'))
-            # print(dFile.content)
+          
+            dFile = downloadFile(ephemeris_directory, filename, year)
             print('\n\r' + dFile + ' Downloaded\n\r')
         else:
             dFile = eFile + '.Z'
@@ -47,7 +116,8 @@ def get_ephemeris(ephemeris_directory):
         if is_windows():
             subprocess.call(GZIP_DIR + '\\7z e '+ dFile + ' -o' + ephemeris_directory, shell=True)
         else:
-            subprocess.call('uncompress -k -d  -f '+ dFile, shell=True)
+            extractEphFile(ephemeris_directory = ephemeris_directory, gz_archive = dFile, eFile= eFile)
+
         print('Finish to Uncompress\n\r')
     return eFile
 
