@@ -190,9 +190,9 @@ def RunRealtimeWithMap(eFile, location, binfilename):
 
 def RunRealTime(eFile, location, binfilename):
     print('it`s realtime mode')
-    now = datetime.utcnow()
-    now_str = now.strftime("%Y/%m/%d,%H:%M:%S")
-    cmd = 'nc -l 127.0.0.1 22500 | ./rt_gpssim  -b 8 -e ' + eFile + ' -T ' + now_str  + ' -l  ' + location
+    # now = datetime.utcnow()
+    # now_str = now.strftime("%Y/%m/%d,%H:%M:%S")
+    cmd = 'nc -l 127.0.0.1 22500 | ./rt_gpssim  -b 8 -e ' + eFile + ' -T now' + ' -l  ' + location
     print(cmd)
     subprocess.call(cmd, shell=True)
     return binfilename	
