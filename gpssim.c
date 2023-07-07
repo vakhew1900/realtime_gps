@@ -1741,6 +1741,16 @@ pthread_t thread;
 pthread_attr_t attr;
 ionoutc_t ionoutc;
 
+void clearChannel(void){
+
+	// Clear all channels
+	for (i=0; i<MAX_CHAN; i++)
+		chan[i].prn = 0;
+
+	// Clear satellite allocation flag
+	for (sv=0; sv<MAX_SAT; sv++)
+		allocatedSat[sv] = -1;
+}
 
 void *readStdin(void *tid) 
 {
@@ -1753,9 +1763,9 @@ void *readStdin(void *tid)
 		pthread_mutex_lock(&coordinateMutex);
 		llh[0] = llh[0] / R2D; // convert to RAD
 		llh[1] = llh[1] / R2D; // convert to RAD
-	//	printf("old xyz : %lf %lf %lf ", xyz[1][1], xyz[1][1], xyz[1][2]);
 		llh2xyz(llh, tmp_xyz);
-	//		printf("new xyz : %lf %lf %lf ", xyz[1][1], xyz[1][1], xyz[1][2]);
+
+		clearChannel();
 		pthread_mutex_unlock(&coordinateMutex);
 	}
 }
@@ -2142,13 +2152,7 @@ int main(int argc, char *argv[])
 	// Initialize channels
 	////////////////////////////////////////////////////////////
 
-	// Clear all channels
-	for (i=0; i<MAX_CHAN; i++)
-		chan[i].prn = 0;
-
-	// Clear satellite allocation flag
-	for (sv=0; sv<MAX_SAT; sv++)
-		allocatedSat[sv] = -1;
+	clearChannel();
 
 	// Initial reception time
 	grx = incGpsTime(g0, 0.0);
