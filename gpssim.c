@@ -1741,6 +1741,23 @@ pthread_t thread;
 pthread_attr_t attr;
 ionoutc_t ionoutc;
 
+int dbg = FALSE;
+
+
+void clearData(){
+
+	// Clear all channels
+	for (i=0; i<MAX_CHAN; i++)
+		chan[i].prn = 0;
+
+
+	// Initial reception time
+	grx = incGpsTime(g0, 0.0);
+
+	// Clear satellite allocation flag
+	for (sv=0; sv<MAX_SAT; sv++)
+		allocatedSat[sv] = -1;
+}
 
 void *readStdin(void *tid) 
 {
@@ -1754,8 +1771,16 @@ void *readStdin(void *tid)
 		llh[0] = llh[0] / R2D; // convert to RAD
 		llh[1] = llh[1] / R2D; // convert to RAD
 	//	printf("old xyz : %lf %lf %lf ", xyz[1][1], xyz[1][1], xyz[1][2]);
+
+		clearData();
+
 		llh2xyz(llh, tmp_xyz);
 	//		printf("new xyz : %lf %lf %lf ", xyz[1][1], xyz[1][1], xyz[1][2]);
+
+
+
+
+		dbg = TRUE;
 		pthread_mutex_unlock(&coordinateMutex);
 	}
 }
@@ -2247,7 +2272,30 @@ int main(int argc, char *argv[])
 #else
 					iTable = (chan[i].carr_phase >> 16) & 0x1ff; // 9-bit index
 #endif
-					ip = chan[i].dataBit * chan[i].codeCA * cosTable512[iTable] * gain[i];
+					int x = gain[i];
+					
+					if (dbg== TRUE){
+						printf("i=%d\n", i);
+						printf("dataBit=%d\n", chan[i].dataBit);
+						printf("codeCA=%d\n", chan[i].codeCA);
+						printf("iTable=%d\n", iTable);
+						printf("cosTable=%d\n", cosTable512[iTable]);
+						dbg = FALSE;
+					}
+
+					if (iTable < 0 || iTable > 511){
+						int x = (int)floor(chan[i].carr_phase*512.0);
+						printf("chan[i].carr_phase=%f", chan[i].carr_phase);
+						printf("x=%d\n", x);
+						printf("iTable=%d\n", iTable);
+
+						#ifdef FLOAT_CARR_PHASE
+						printf("FFFFFFFFFFFFFFFFFFF\n");;
+						#endif
+					}
+
+					
+					ip = chan[i].dataBit * chan[i].codeCA * cosTable512[iTable] * gain[i]; // вот тут ошибка
 					qp = chan[i].dataBit * chan[i].codeCA * sinTable512[iTable] * gain[i];
 
 					// Accumulate for all visible satellites
