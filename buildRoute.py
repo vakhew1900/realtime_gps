@@ -2,6 +2,7 @@
 from copy import deepcopy
 import socket
 import time
+import pandas as pd
 
 steps = 10
 
@@ -48,24 +49,29 @@ def send_route_to_sever(route, sleep_time):
     sock.connect((HOST, PORT))
 
     for point in route:
-        height = 100
+    
         str = '{0},{1},{2}\n'.format(point['lat'], point['lon'], height)
         sock.send(str.encode("utf-8"))
         time.sleep(sleep_time)
 
 
-
+def convert_to_csv(route):
+    df = pd.DataFrame.from_dict(route) 
+    dir = './'
+    filename = dir + 'location.csv'
+    df.to_csv(filename, index=False, header=True)
 
 def main():
-    start_pos = {'lat' : start_lat, 'lon' : start_lon}
-    finish_pos = {'lat' : finish_lat, 'lon' : finish_lon}
+    start_pos = {'lat' : start_lat, 'lon' : start_lon, 'height' : 100}
+    finish_pos = {'lat' : finish_lat, 'lon' : finish_lon, 'height': 100}
     
     route = create_route(start_pos, finish_pos, steps)
 
     for point in route:
         print(point)
 
-    send_route_to_sever(route, 3)
+    # send_route_to_sever(route, 3)
+    convert_to_csv(route)
 
 if __name__ == "__main__":
     main()
