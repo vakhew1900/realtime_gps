@@ -1765,7 +1765,7 @@ void *readStdin(void *tid)
 		llh[1] = llh[1] / R2D; // convert to RAD
 		llh2xyz(llh, tmp_xyz);
 
-		clearChannel();
+		//clearChannel();
 		pthread_mutex_unlock(&coordinateMutex);
 	}
 }
@@ -2294,6 +2294,9 @@ int main(int argc, char *argv[])
 #ifdef FLOAT_CARR_PHASE
 					chan[i].carr_phase += chan[i].f_carr * delt;
 
+					//if (chan[i].carr_phase >= 2.0 || chan[i].carr_phase < -1.0){
+					//	clearChannel();
+					//}
 					if (chan[i].carr_phase >= 1.0)
 						chan[i].carr_phase -= 1.0;
 					else if (chan[i].carr_phase<0.0)

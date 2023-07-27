@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #phone ip 
-HOST=11.172.54.73
+HOST=192.168.43.1
 PORT=50000
 
 #stop gpsd
